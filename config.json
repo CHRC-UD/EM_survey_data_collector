@@ -1,0 +1,278 @@
+{
+    "name": "Survey Data Collector",
+    "namespace": "SurveyDataCollector\\ExternalModule",
+    "description": "Automatically captures survey participant IP addresses (encrypted), user agent strings, browser information, and platform details. Configure field mappings per instrument or use action tags. <strong><a href=\"https://github.com/yourusername/survey-data-collector\" target=\"_blank\">Documentation</a></strong>",
+    "documentation": "README.md",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "your.email@institution.edu",
+            "institution": "Your Institution"
+        }
+    ],
+    "framework-version": 14,
+    "links": {
+        "control-center": [
+            {
+                "name": "IP-DECRYPT",
+                "icon": "fas fa-key",
+                "url": "decryption-page.php",
+                "target": "_blank"
+            }
+        ],
+        "project": [
+            {
+                "name": "Manage Survey Data Fields",
+                "icon": "fas fa-cog",
+                "url": "field-manager.php"
+            }
+        ]
+    },
+    "action-tags": [
+        {
+            "tag": "@SURVEY-IP-ENCRYPT",
+            "description": "Captures the survey participant's IP address as an <b>encrypted</b> string. Multiple submissions from the same IP will have the same encrypted value, useful for identifying potential duplicates. Typically used with @HIDDEN-SURVEY and @READONLY. Requires encryption key in Control Center configuration. <b>WARNING:</b> VPN/proxy servers will show that server's IP, not the user's actual IP."
+        },
+        {
+            "tag": "@SURVEY-IP",
+            "description": "Captures the survey participant's IP address in <b>plain text</b>. Use @SURVEY-IP-ENCRYPT for privacy-protected collection. This tag is typically used with @HIDDEN-SURVEY and @READONLY. <b>WARNING:</b> Storing plain text IPs may have privacy/compliance implications."
+        },
+        {
+            "tag": "@SURVEY-USER-AGENT",
+            "description": "Captures the survey participant's full user agent string, which includes browser name, version, and operating system information. Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@SURVEY-BROWSER",
+            "description": "Captures the survey participant's browser name (e.g., Chrome, Firefox, Safari). Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@SURVEY-PLATFORM",
+            "description": "Captures the survey participant's operating system/platform (e.g., Windows, Macintosh, Linux, iOS, Android). Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@SURVEY-IS-MOBILE",
+            "description": "Indicates if the survey participant is using a mobile device. Returns '1' for mobile, '0' for desktop. Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@SURVEY-IS-ROBOT",
+            "description": "Indicates if the survey participant appears to be a bot/crawler. Returns '1' for robot, '0' for human. Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@SURVEY-REFERRER",
+            "description": "Captures the HTTP referrer URL (the page the participant came from before accessing the survey). May be empty if referrer is not sent. Typically used with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-STATUS",
+            "description": "Geolocation status from ip-api.com ('success' or 'fail'). Requires 'Enable IP Geolocation Lookup' enabled. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-COUNTRY",
+            "description": "Country name from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-COUNTRY-CODE",
+            "description": "ISO country code from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-REGION",
+            "description": "Region/state code from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-REGION-NAME",
+            "description": "Full region/state name from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-CITY",
+            "description": "City name from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-ZIP",
+            "description": "Postal/zip code from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-LAT",
+            "description": "Geographic latitude from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-LON",
+            "description": "Geographic longitude from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-TIMEZONE",
+            "description": "IANA timezone from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-ISP",
+            "description": "Internet Service Provider from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-ORG",
+            "description": "Organization name from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-AS",
+            "description": "AS number and name from ip-api.com geolocation. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-PROXY",
+            "description": "Proxy/VPN detection from ip-api.com (true/false). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@IPAPI-HOSTING",
+            "description": "Hosting/datacenter detection from ip-api.com (true/false). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-STATUS",
+            "description": "Email validation status from ZeroBounce (valid, invalid, catch-all, unknown, spamtrap, abuse, do_not_mail). Requires ZeroBounce API key and email field configured. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-SUB-STATUS",
+            "description": "Detailed ZeroBounce sub-status. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-FREE-EMAIL",
+            "description": "Indicates if the email is from a free provider (true/false). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-DID-YOU-MEAN",
+            "description": "Suggested correction if a typo is detected (e.g., gmial.com -> gmail.com). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-ACCOUNT",
+            "description": "The account portion of the email (before @). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-DOMAIN",
+            "description": "The domain portion of the email (after @). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-FIRSTNAME",
+            "description": "First name guessed by ZeroBounce. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-LASTNAME",
+            "description": "Last name guessed by ZeroBounce. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-GENDER",
+            "description": "Gender guessed from the name (male/female). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-CITY",
+            "description": "City returned by ZeroBounce. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-REGION",
+            "description": "Region/state returned by ZeroBounce. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@ZEROBOUNCE-COUNTRY",
+            "description": "Country returned by ZeroBounce. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-VALID",
+            "description": "Numverify: Indicates if the phone number is valid (1/0). Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-INTERNATIONAL",
+            "description": "Numverify: International phone format. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-LOCAL",
+            "description": "Numverify: Local phone format. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-COUNTRY-PREFIX",
+            "description": "Numverify: Country prefix for the phone number. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-COUNTRY-CODE",
+            "description": "Numverify: Country code. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-COUNTRY-NAME",
+            "description": "Numverify: Country name. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-LOCATION",
+            "description": "Numverify: Location/region for the phone number. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-CARRIER",
+            "description": "Numverify: Carrier name. Use with @HIDDEN-SURVEY and @READONLY."
+        },
+        {
+            "tag": "@NUMVERIFY-LINE-TYPE",
+            "description": "Numverify: Line type (mobile, landline, voip, etc.). Use with @HIDDEN-SURVEY and @READONLY."
+        }
+    ],
+    "system-settings": [
+        {
+            "key": "encryption-key",
+            "name": "<b>Encryption Key</b><br><ul><li>Required for @SURVEY-IP-ENCRYPT action tag and 'encrypted-ip' field mapping option.</li><li>Should be <b>at least 12 characters</b> with uppercase, lowercase, and numeric characters.</li><li><b>IMPORTANT:</b> Once set, do NOT change this key unless necessary. Changing it will prevent decryption of previously encrypted IPs.</li><li>If you must change it, keep a log of old keys and update the version below.</li><li>A REDCap administrator can decrypt IPs via the 'IP-DECRYPT' link in Control Center (may require IRB approval).</li></ul>",
+            "required": true,
+            "type": "text"
+        },
+        {
+            "key": "encryption-key-version",
+            "name": "<b>Encryption Key Version</b><br>Track which version of the encryption key is currently in use (e.g., 'v1', 'v2'). Update this whenever the encryption key is rotated. This helps identify which key was used to encrypt historical data.",
+            "required": false,
+            "type": "text",
+            "default": "v1"
+        }
+    ],
+    "project-settings": [
+        {
+            "key": "enable-geolocation",
+            "name": "<b>Enable IP Geolocation Lookup</b><br>When enabled, the module will use the ipapi.co API to retrieve geographic information (city, region, country, timezone, ISP, etc.) for IP addresses. <b>WARNING:</b> This sends the IP address to a third-party service. Ensure this complies with your privacy policies and obtain appropriate consent.",
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "key": "geolocation-timeout",
+            "name": "<b>Geolocation API Timeout (seconds)</b><br>Maximum time to wait for geolocation API response. Default is 3 seconds.",
+            "required": false,
+            "type": "text",
+            "default": "3"
+        },
+        {
+            "key": "zerobounce-api-key",
+            "name": "<b>ZeroBounce API Key</b><br>Project-level API key for ZeroBounce single email validation. Obtain from <a href='https://www.zerobounce.net/members/api/' target='_blank'>zerobounce.net</a>. Leave blank to disable for this project.",
+            "required": false,
+            "type": "text"
+        },
+        {
+            "key": "zerobounce-email-field",
+            "name": "<b>Email Field for ZeroBounce</b><br>The email field to validate with ZeroBounce. Set automatically when you add ZeroBounce fields from the Field Manager.",
+            "required": false,
+            "type": "text"
+        },
+        {
+            "key": "numverify-api-key",
+            "name": "<b>Numverify API Key</b><br>Project-level API key for Numverify phone validation. Obtain from <a href='https://numverify.com/dashboard' target='_blank'>numverify.com</a>. Leave blank to disable for this project.",
+            "required": false,
+            "type": "text"
+        },
+        {
+            "key": "numverify-phone-field",
+            "name": "<b>Phone Field for Numverify</b><br>The phone field to validate with Numverify. Set automatically when you add Numverify fields from the Field Manager.",
+            "required": false,
+            "type": "text"
+        },
+        {
+            "key": "debug-editable-ip",
+            "name": "<b>Debug: Make IP Field Editable</b><br>When enabled, the Survey IP field will be visible and editable on the survey form for testing purposes. Disable in production.",
+            "required": false,
+            "type": "checkbox"
+        },
+        {
+            "key": "debug-mode",
+            "name": "<b>Debug Mode</b><br>When enabled, detailed logging will be written for all survey data collection operations. Check REDCap Module Logs for debugging information.",
+            "required": false,
+            "type": "checkbox"
+        }
+    ],
+    "compatibility": {
+        "redcap-version-min": "13.1.0"
+    }
+}
