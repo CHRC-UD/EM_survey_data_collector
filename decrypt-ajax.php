@@ -48,9 +48,19 @@ try {
     // Decrypt the IP
     $ciphering = "AES-256-CTR";
     $options = 0;
-    $decryptionIv = '1234567891011121';
     
-    $decryptedIp = openssl_decrypt($encryptedIp, $ciphering, $encryptionKey, $options, $decryptionIv);
+    // Support new format: base64(iv)::ciphertext||version
+    // and legacy format: ciphertext (static IV)
+    if (strpos($encryptedIp, '::') !== false) {
+        // New format with random IV
+        list($ivBase64, $ciphertext) = explode('::', $encryptedIp, 2);
+        $decryptionIv = base64_decode($ivBase64);
+        $decryptedIp = openssl_decrypt($ciphertext, $ciphering, $encryptionKey, $options, $decryptionIv);
+    } else {
+        // Legacy format with static IV
+        $decryptionIv = '1234567891011121';
+        $decryptedIp = openssl_decrypt($encryptedIp, $ciphering, $encryptionKey, $options, $decryptionIv);
+    }
     
     if ($decryptedIp === false) {
         $module->log('Error: Failed to decrypt IP address. Possible key mismatch or corrupted data.');
@@ -61,9 +71,8 @@ try {
         exit;
     }
     
-    // Log the decryption attempt
+    // Log the decryption attempt (log the event, not the decrypted value)
     $module->log('IP address decrypted', [
-        'decrypted_ip' => $decryptedIp,
         'key_version' => $providedKeyVersion,
         'user' => defined('USERID') ? USERID : 'unknown'
     ]);

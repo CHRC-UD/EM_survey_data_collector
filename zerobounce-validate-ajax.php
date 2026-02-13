@@ -29,24 +29,33 @@ if (!empty($referrer)) {
     }
 }
 
-// 3. Rate limiting: max 10 requests per minute per IP
-session_start();
+// 3. Rate limiting: max 10 requests per minute per IP (file-based, not session)
 $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-$rateKey = 'zb_rate_' . md5($ip);
+$rateLimitDir = sys_get_temp_dir() . '/sdc_ratelimit';
+if (!is_dir($rateLimitDir)) {
+    @mkdir($rateLimitDir, 0700, true);
+}
+$rateFile = $rateLimitDir . '/' . md5($ip) . '.json';
 $now = time();
-$_SESSION[$rateKey] = $_SESSION[$rateKey] ?? [];
-// Clean old entries (older than 1 minute)
-$_SESSION[$rateKey] = array_filter($_SESSION[$rateKey], function($timestamp) use ($now) {
-    return ($now - $timestamp) < 60;
-});
+$timestamps = [];
+if (file_exists($rateFile)) {
+    $raw = @file_get_contents($rateFile);
+    $timestamps = $raw ? json_decode($raw, true) : [];
+    if (!is_array($timestamps)) $timestamps = [];
+}
+// Clean entries older than 60 seconds
+$timestamps = array_values(array_filter($timestamps, function($ts) use ($now) {
+    return ($now - $ts) < 60;
+}));
 // Check limit
-if (count($_SESSION[$rateKey]) >= 10) {
+if (count($timestamps) >= 10) {
     http_response_code(429);
     echo json_encode(['success' => false, 'error' => 'Rate limit exceeded']);
     exit;
 }
-// Add current request
-$_SESSION[$rateKey][] = $now;
+// Record current request
+$timestamps[] = $now;
+@file_put_contents($rateFile, json_encode($timestamps), LOCK_EX);
 
 $module = $GLOBALS['module'] ?? null;
 if (!$module) {

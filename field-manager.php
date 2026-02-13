@@ -38,6 +38,10 @@ foreach ($Proj->metadata as $fieldName => $meta) {
     ];
 }
 
+// Current saved field selections
+$currentEmailField = $module->getProjectSetting('zerobounce-email-field') ?? '';
+$currentPhoneField = $module->getProjectSetting('numverify-phone-field') ?? '';
+
 ?>
     <style>
         .container { max-width: 1200px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -83,7 +87,7 @@ foreach ($Proj->metadata as $fieldName => $meta) {
         
         <?php if ($draftMode): ?>
             <div class="alert alert-danger" role="alert">
-                <h5 style="margin-top: 0;">⚠️ Project in Draft Mode</h4>
+                <h5 style="margin-top: 0;">⚠️ Project in Draft Mode</h5>
                 <p>Your project has uncommitted changes in the Data Dictionary Designer. You must finalize these changes before you can add survey data collection fields.</p>
                 <p><strong>To continue:</strong> Go to <strong>Project Setup → Data Dictionary → Finalize</strong> and commit your changes.</p>
             </div>
@@ -112,14 +116,24 @@ foreach ($Proj->metadata as $fieldName => $meta) {
         </div>
         
         <div class="form-group">
-            <label for="email-field-select">Email Field for ZeroBounce:</label>
+            <label for="email-field-select">Email Field for ZeroBounce Validation:</label>
+            <?php if (!empty($currentEmailField)): ?>
+                <small style="color: #155724;">Currently set to: <strong><?php echo htmlspecialchars($currentEmailField); ?></strong></small>
+            <?php else: ?>
+                <small style="color: #856404;">Not configured &mdash; select a field below to enable ZeroBounce validation</small>
+            <?php endif; ?>
             <select id="email-field-select" <?php echo $draftMode ? 'disabled' : ''; ?>>
                 <option value="">-- Select instrument first --</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="phone-field-select">Phone Field for Numverify:</label>
+            <label for="phone-field-select">Phone Field for Numverify Validation:</label>
+            <?php if (!empty($currentPhoneField)): ?>
+                <small style="color: #155724;">Currently set to: <strong><?php echo htmlspecialchars($currentPhoneField); ?></strong></small>
+            <?php else: ?>
+                <small style="color: #856404;">Not configured &mdash; select a field below to enable Numverify validation</small>
+            <?php endif; ?>
             <select id="phone-field-select" <?php echo $draftMode ? 'disabled' : ''; ?>>
                 <option value="">-- Select instrument first --</option>
             </select>
@@ -180,32 +194,92 @@ foreach ($Proj->metadata as $fieldName => $meta) {
             
             <div class="field-card">
                 <h4>City (Geolocation)</h4>
-                <p>City name from IP geolocation. Requires geolocation enabled in system settings.</p>
-                <button class="add-field-btn" data-tag="@SURVEY-GEO-CITY" data-label="Survey City" disabled>Add Field</button>
+                <p>City name from IP geolocation. Requires geolocation enabled in project settings.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-CITY" data-label="Survey City" disabled>Add Field</button>
             </div>
             
             <div class="field-card">
                 <h4>Region/State (Geolocation)</h4>
                 <p>Region/state name from IP geolocation.</p>
-                <button class="add-field-btn" data-tag="@SURVEY-GEO-REGION" data-label="Survey Region" disabled>Add Field</button>
+                <button class="add-field-btn" data-tag="@IPAPI-REGION-NAME" data-label="Survey Region" disabled>Add Field</button>
             </div>
             
             <div class="field-card">
                 <h4>Country (Geolocation)</h4>
                 <p>Country name from IP geolocation.</p>
-                <button class="add-field-btn" data-tag="@SURVEY-GEO-COUNTRY" data-label="Survey Country" disabled>Add Field</button>
+                <button class="add-field-btn" data-tag="@IPAPI-COUNTRY" data-label="Survey Country" disabled>Add Field</button>
             </div>
             
             <div class="field-card">
                 <h4>Timezone (Geolocation)</h4>
                 <p>Timezone from IP geolocation (e.g., "America/Chicago").</p>
-                <button class="add-field-btn" data-tag="@SURVEY-GEO-TIMEZONE" data-label="Survey Timezone" disabled>Add Field</button>
+                <button class="add-field-btn" data-tag="@IPAPI-TIMEZONE" data-label="Survey Timezone" disabled>Add Field</button>
             </div>
             
             <div class="field-card">
                 <h4>ISP/Organization (Geolocation)</h4>
                 <p>Internet service provider or organization from IP geolocation.</p>
-                <button class="add-field-btn" data-tag="@SURVEY-GEO-ORG" data-label="Survey ISP" disabled>Add Field</button>
+                <button class="add-field-btn" data-tag="@IPAPI-ORG" data-label="Survey ISP" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Geolocation Status</h4>
+                <p>Geolocation lookup status ("success" or "fail").</p>
+                <button class="add-field-btn" data-tag="@IPAPI-STATUS" data-label="Survey Geo Status" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Country Code (Geolocation)</h4>
+                <p>ISO country code from IP geolocation (e.g., "US").</p>
+                <button class="add-field-btn" data-tag="@IPAPI-COUNTRY-CODE" data-label="Survey Country Code" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Region Code (Geolocation)</h4>
+                <p>Region/state code from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-REGION" data-label="Survey Region Code" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Zip/Postal Code (Geolocation)</h4>
+                <p>Postal/zip code from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-ZIP" data-label="Survey Zip" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Latitude (Geolocation)</h4>
+                <p>Geographic latitude from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-LAT" data-label="Survey Latitude" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Longitude (Geolocation)</h4>
+                <p>Geographic longitude from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-LON" data-label="Survey Longitude" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>ISP (Geolocation)</h4>
+                <p>Internet Service Provider from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-ISP" data-label="Survey ISP Name" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>AS Number (Geolocation)</h4>
+                <p>Autonomous System number and name from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-AS" data-label="Survey AS" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Proxy/VPN Detection</h4>
+                <p>Proxy/VPN detected (true/false) from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-PROXY" data-label="Survey Proxy" disabled>Add Field</button>
+            </div>
+            
+            <div class="field-card">
+                <h4>Hosting Detection</h4>
+                <p>Hosting/datacenter detected (true/false) from IP geolocation.</p>
+                <button class="add-field-btn" data-tag="@IPAPI-HOSTING" data-label="Survey Hosting" disabled>Add Field</button>
             </div>
         </div>
 
@@ -333,7 +407,9 @@ foreach ($Proj->metadata as $fieldName => $meta) {
             ajaxUrl: '<?php echo $module->getUrl('add-field-ajax.php'); ?>',
             setEmailUrl: '<?php echo $module->getUrl('set-zerobounce-email-field.php'); ?>',
             setPhoneUrl: '<?php echo $module->getUrl('set-numverify-phone-field.php'); ?>',
-            formFields: <?php echo json_encode($formFields); ?>
+            formFields: <?php echo json_encode($formFields); ?>,
+            currentEmailField: <?php echo json_encode($currentEmailField); ?>,
+            currentPhoneField: <?php echo json_encode($currentPhoneField); ?>
         };
     </script>
 

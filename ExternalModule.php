@@ -78,15 +78,8 @@ class ExternalModule extends AbstractExternalModule
      */
     private function debugLog($message, $data = null)
     {
-        // Check project ID context - only available in hooks
-        global $project_id;
-        
-        if (isset($GLOBALS['project_id'])) {
-            $debugMode = $this->getProjectSetting('debug-mode', $GLOBALS['project_id']);
-        } else {
-            // Fallback: check if we can get project_id from globals
-            $debugMode = isset($GLOBALS['project_id']) ? $this->getProjectSetting('debug-mode', $GLOBALS['project_id']) : false;
-        }
+        $pid = $GLOBALS['project_id'] ?? null;
+        $debugMode = $pid ? $this->getProjectSetting('debug-mode', $pid) : false;
         
         if ($debugMode) {
             if (is_array($data)) {
@@ -106,9 +99,9 @@ class ExternalModule extends AbstractExternalModule
         // Get encryption key and version from system settings
         $encryptionKey = $this->getSystemSetting('encryption-key');
         $keyVersion = $this->getSystemSetting('encryption-key-version');
-        $geoEnabled = $this->getSystemSetting('enable-geolocation');
         $zbEmailField = $this->getProjectSetting('zerobounce-email-field');
         $zbApiKey = $this->getProjectSetting('zerobounce-api-key');
+        $debugMode = $this->getProjectSetting('debug-mode', $project_id);
         
         if (empty($keyVersion)) {
             $keyVersion = 'v1';
@@ -120,13 +113,13 @@ class ExternalModule extends AbstractExternalModule
         // Get action tag-based field mappings
         $actionTagConfigs = $this->getActionTagConfigs($instrument);
         
-        $this->log('Survey data collection', [
-            'instrument' => $instrument,
-            'record' => $record,
-            'action_tag_count' => count($actionTagConfigs),
-            'ip_address' => $this->options['ip-address'] ?? 'not set',
-            'geo_enabled' => $geoEnabled ? 'yes' : 'no'
-        ]);
+        if ($debugMode) {
+            $this->log('Survey data collection', [
+                'instrument' => $instrument,
+                'record' => $record,
+                'action_tag_count' => count($actionTagConfigs)
+            ]);
+        }
         
         // Exit if no fields to populate
         if (empty($actionTagConfigs)) {
@@ -152,6 +145,97 @@ class ExternalModule extends AbstractExternalModule
             ]
         ]);
     }
+
+    /**
+     * Hook: redcap_data_entry_form_top
+     * Ensure action-tag fields remain visible on data entry pages.
+     */
+    public function redcap_data_entry_form_top($project_id, $record, $instrument, $event_id, $group_id, $repeat_instance)
+    {
+        if (!$project_id || empty($instrument)) {
+            return;
+        }
+
+        $actionTagConfigs = $this->getActionTagConfigs($instrument);
+        if (empty($actionTagConfigs)) {
+            return;
+        }
+
+        $fieldNames = [];
+        foreach ($actionTagConfigs as $config) {
+            if (!empty($config['field_name'])) {
+                $fieldNames[] = $config['field_name'];
+            }
+        }
+
+        $fieldNames = array_values(array_unique($fieldNames));
+        if (empty($fieldNames)) {
+            return;
+        }
+
+        global $Proj;
+        $fieldLabels = [];
+        foreach ($fieldNames as $fieldName) {
+            $fieldLabels[$fieldName] = $Proj->metadata[$fieldName]['element_label'] ?? $fieldName;
+        }
+
+        $fieldNamesJson = json_encode($fieldNames);
+        $fieldLabelsJson = json_encode($fieldLabels);
+        ?>
+        <script>
+        (function() {
+            var fieldNames = <?php echo $fieldNamesJson; ?>;
+            var fieldLabels = <?php echo $fieldLabelsJson; ?>;
+
+            function showRow($row) {
+                if (!$row || !$row.length) {
+                    return;
+                }
+                $row.css('display', 'table-row').show();
+                $row.closest('table, tbody').find('tr').css('visibility', 'visible');
+            }
+
+            function revealFieldRow(fieldName) {
+                var selectors = [
+                    '#questiontr_' + fieldName,
+                    '#questiontr_' + fieldName + '-tr',
+                    'tr[field_name="' + fieldName + '"]',
+                    'tr[id*="' + fieldName + '"]'
+                ];
+
+                selectors.forEach(function(selector) {
+                    showRow($(selector));
+                });
+
+                showRow($('[name="' + fieldName + '"]').closest('tr'));
+                showRow($('[name="__chkn__' + fieldName + '"]').closest('tr'));
+
+                var label = fieldLabels[fieldName] || '';
+                if (label) {
+                    $('td.labelrc, td.form_label').each(function() {
+                        var text = ($(this).text() || '').trim();
+                        if (text === label) {
+                            showRow($(this).closest('tr'));
+                        }
+                    });
+                }
+            }
+
+            $(function() {
+                fieldNames.forEach(function(fieldName) {
+                    revealFieldRow(fieldName);
+                });
+
+                setTimeout(function() {
+                    fieldNames.forEach(function(fieldName) {
+                        revealFieldRow(fieldName);
+                    });
+                }, 250);
+            });
+        })();
+        </script>
+        <?php
+    }
     
     /**
      * Hook: redcap_survey_complete
@@ -168,9 +252,9 @@ class ExternalModule extends AbstractExternalModule
         
         // Get encryption key
         $encryptionKey = $this->getSystemSetting('encryption-key');
-        $keyVersion = $this->getSystemSetting('key-version');
+        $keyVersion = $this->getSystemSetting('encryption-key-version');
         if (empty($keyVersion)) {
-            $keyVersion = 1;
+            $keyVersion = 'v1';
         }
         
         // Check if IP field is in edit mode (debug-editable-ip enabled) and has a manually entered value
@@ -242,28 +326,25 @@ class ExternalModule extends AbstractExternalModule
             $this->log("Numverify: key present=" . (!empty($nvApiKey) ? 'yes' : 'no') . ", phone field=$nvPhoneField");
         }
         
-        // Populate regular survey fields (IP, browser, etc.)
+        // Populate regular survey fields (IP, browser, geo, etc.)
         foreach ($actionTagConfigs as $config) {
             $fieldName = $config['field_name'];
             $dataOption = $config['data_option'];
             
-            // Skip ZeroBounce and IPAPI fields (will handle separately)
-            if (strpos($dataOption, 'zb-') === 0 || strpos($dataOption, 'ipapi-') === 0) {
+            // Skip ZeroBounce fields (handled separately below after API call)
+            if (strpos($dataOption, 'zb-') === 0) {
                 continue;
-            }
-            
-            // For IP fields when manually entered, skip if we already used it for geolocation
-            // (buildOptions already used the manual IP if provided)
-            if ($manuallyEnteredIp && ($dataOption === 'ip-address' || $dataOption === 'encrypted-ip')) {
-                // The options were built using the manual IP, so just use getOption()
-                // which will return the correct value
             }
             
             $value = $this->getOption($dataOption);
             if ($value !== '' && $value !== null) {
-                $dataToSave[$fieldName] = $value;
+                $dataToSave[$fieldName] = (string) $value;
                 if ($debugMode) {
                     $this->log("Added field: $fieldName (option: $dataOption) = $value");
+                }
+            } else {
+                if ($debugMode) {
+                    $this->log("Skipped empty field: $fieldName (option: $dataOption)");
                 }
             }
         }
@@ -410,7 +491,6 @@ class ExternalModule extends AbstractExternalModule
         if ($debugMode) {
             $this->log("validateEmailWithZeroBounce called for: $email");
         }
-        $this->log("validateEmailWithZeroBounce called for: $email");
         $url = 'https://api.zerobounce.net/v2/validate?api_key=' . urlencode($apiKey) . '&email=' . urlencode($email);
         
         try {
@@ -443,7 +523,9 @@ class ExternalModule extends AbstractExternalModule
                 return null;
             }
             
-            $this->log('ZeroBounce API success: ' . json_encode($data));
+            if ($debugMode) {
+                $this->log('ZeroBounce API success: ' . json_encode($data));
+            }
             return $data;
             
         } catch (\Exception $e) {
@@ -661,7 +743,8 @@ class ExternalModule extends AbstractExternalModule
     
     /**
      * Hook: redcap_every_page_before_render
-     * Modify field metadata to add @HIDDEN-SURVEY and @READONLY tags
+     * Modify field metadata to add @HIDDEN-SURVEY (survey only) and @READONLY tags.
+     * Only injects @HIDDEN-SURVEY on survey pages so fields remain visible on data entry.
      */
     public function redcap_every_page_before_render($project_id)
     {
@@ -671,15 +754,24 @@ class ExternalModule extends AbstractExternalModule
         
         global $Proj;
         
+        $isSurveyPage = (isset($_GET['s']) && PAGE == 'surveys/index.php' && defined('NOAUTH'));
+        if (!$isSurveyPage) {
+            return;
+        }
+        
         // Get all action tag fields
         $actionTagFields = $this->getActionTagFields();
         
-        // Get action tag configs to check for ZeroBounce fields
+        // Get action tag configs to check for ZeroBounce and IP fields
         $actionTagConfigs = $this->getActionTagConfigs(null);
         $zbFields = [];
+        $ipFields = [];
         foreach ($actionTagConfigs as $config) {
             if (isset($config['data_option']) && strpos($config['data_option'], 'zb-') === 0) {
                 $zbFields[] = $config['field_name'];
+            }
+            if (isset($config['data_option']) && in_array($config['data_option'], ['ip-address', 'encrypted-ip'])) {
+                $ipFields[] = $config['field_name'];
             }
         }
         
@@ -692,7 +784,7 @@ class ExternalModule extends AbstractExternalModule
             // Check if field is text type
             $fieldType = $Proj->metadata[$fieldName]['element_type'];
             if ($fieldType !== 'text') {
-                $this->log('Warning: Field "' . $fieldName . '" is not a text field (type: ' . $fieldType . '). Survey data collection requires text fields.');
+                $this->debugLog('Warning: Field "' . $fieldName . '" is not a text field (type: ' . $fieldType . ').');
                 continue;
             }
             
@@ -705,11 +797,10 @@ class ExternalModule extends AbstractExternalModule
                     $misc .= ' @READONLY';
                 }
             }
-            // For survey_survey_ip: check debug-editable-ip setting
-            elseif ($fieldName === 'survey_survey_ip') {
-                // If debug mode is enabled, make field visible and editable (skip all tags)
+            // For IP fields: check debug-editable-ip setting
+            elseif (in_array($fieldName, $ipFields)) {
                 if (!$this->getProjectSetting('debug-editable-ip')) {
-                    // Normal production mode: hide and make readonly
+                    // Production: hide and readonly on surveys
                     if (strpos($misc, '@HIDDEN-SURVEY') === false) {
                         $misc .= ' @HIDDEN-SURVEY';
                     }
@@ -717,9 +808,9 @@ class ExternalModule extends AbstractExternalModule
                         $misc .= ' @READONLY';
                     }
                 }
-                // In debug mode, leave field as-is (no tags added)
+                // Debug mode: leave field visible and editable (no tags added)
             } else {
-                // For other fields: add both @HIDDEN-SURVEY and @READONLY
+                // For other survey fields: hide and readonly on surveys
                 if (strpos($misc, '@HIDDEN-SURVEY') === false) {
                     $misc .= ' @HIDDEN-SURVEY';
                 }
@@ -744,7 +835,13 @@ class ExternalModule extends AbstractExternalModule
             $ipAddress = System::clientIpAddress();
         }
         
-        if ($ipAddress === '') {
+        if ($debugMode) {
+            $this->log('buildOptions: raw IP from System::clientIpAddress() = "' . $ipAddress . '"');
+            $this->log('buildOptions: REMOTE_ADDR = "' . ($_SERVER['REMOTE_ADDR'] ?? 'unset') . '"');
+            $this->log('buildOptions: HTTP_X_FORWARDED_FOR = "' . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? 'unset') . '"');
+        }
+        
+        if ($ipAddress === '' || $ipAddress === false) {
             $this->log('Error: Unable to retrieve client IP address.');
             $ipAddress = 'UNKNOWN';
         }
@@ -754,13 +851,14 @@ class ExternalModule extends AbstractExternalModule
         if (!empty($encryptionKey)) {
             $ciphering = "AES-256-CTR";
             $options = 0;
-            $encryptionIv = '1234567891011121';
-            $encryptedIp = openssl_encrypt($ipAddress, $ciphering, $encryptionKey, $options, $encryptionIv);
+            // Generate a random IV per encryption for security
+            $iv = openssl_random_pseudo_bytes(16);
+            $encrypted = openssl_encrypt($ipAddress, $ciphering, $encryptionKey, $options, $iv);
             
-            // Append key version to encrypted value
-            $encryptedIp .= '||' . $keyVersion;
+            // Format: base64(iv)::ciphertext||keyVersion
+            $encryptedIp = base64_encode($iv) . '::' . $encrypted . '||' . $keyVersion;
         } else {
-            $this->log('Warning: Encryption key not set in system settings. Encrypted IP collection will not work.');
+            $this->debugLog('Warning: Encryption key not set in system settings. Encrypted IP collection will not work.');
         }
         
         // Initialize browser detection
@@ -845,7 +943,7 @@ class ExternalModule extends AbstractExternalModule
     }
     
     /**
-     * Fetch geolocation data from ipapi.co
+     * Fetch geolocation data from ip-api.com
      */
     private function fetchGeolocationData($ipAddress, $debugMode = false)
     {
@@ -854,8 +952,13 @@ class ExternalModule extends AbstractExternalModule
             $timeout = 3;
         }
         
-        // Use ip-api.com JSON endpoint
-        $url = 'http://ip-api.com/json/' . urlencode($ipAddress) . '?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting';
+        // Use ip-api.com JSON endpoint (HTTPS requires Pro key; fall back to HTTP for free tier)
+        $proKey = $this->getProjectSetting('ipapi-pro-key') ?? '';
+        if (!empty($proKey)) {
+            $url = 'https://pro.ip-api.com/json/' . urlencode($ipAddress) . '?key=' . urlencode($proKey) . '&fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting';
+        } else {
+            $url = 'http://ip-api.com/json/' . urlencode($ipAddress) . '?fields=status,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,proxy,hosting';
+        }
         
         try {
             // Use cURL for better timeout control

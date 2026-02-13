@@ -224,7 +224,7 @@
     "project-settings": [
         {
             "key": "enable-geolocation",
-            "name": "<b>Enable IP Geolocation Lookup</b><br>When enabled, the module will use the ipapi.co API to retrieve geographic information (city, region, country, timezone, ISP, etc.) for IP addresses. <b>WARNING:</b> This sends the IP address to a third-party service. Ensure this complies with your privacy policies and obtain appropriate consent.",
+            "name": "<b>Enable IP Geolocation Lookup</b><br>When enabled, the module will use the ip-api.com API to retrieve geographic information (city, region, country, timezone, ISP, etc.) for IP addresses. <b>WARNING:</b> This sends the IP address to a third-party service. Ensure this complies with your privacy policies and obtain appropriate consent.",
             "required": false,
             "type": "checkbox"
         },
@@ -236,6 +236,12 @@
             "default": "3"
         },
         {
+            "key": "ipapi-pro-key",
+            "name": "<b>ip-api.com Pro Key (Optional)</b><br>If you have a paid ip-api.com Pro plan, enter your key here to enable HTTPS for geolocation requests. Leave blank to use the free HTTP tier.",
+            "required": false,
+            "type": "text"
+        },
+        {
             "key": "zerobounce-api-key",
             "name": "<b>ZeroBounce API Key</b><br>Project-level API key for ZeroBounce single email validation. Obtain from <a href='https://www.zerobounce.net/members/api/' target='_blank'>zerobounce.net</a>. Leave blank to disable for this project.",
             "required": false,
@@ -243,9 +249,10 @@
         },
         {
             "key": "zerobounce-email-field",
-            "name": "<b>Email Field for ZeroBounce</b><br>The email field to validate with ZeroBounce. Set automatically when you add ZeroBounce fields from the Field Manager.",
+            "name": "Email Field for ZeroBounce (managed via Field Manager)",
             "required": false,
-            "type": "text"
+            "type": "text",
+            "hidden": true
         },
         {
             "key": "numverify-api-key",
@@ -255,9 +262,10 @@
         },
         {
             "key": "numverify-phone-field",
-            "name": "<b>Phone Field for Numverify</b><br>The phone field to validate with Numverify. Set automatically when you add Numverify fields from the Field Manager.",
+            "name": "Phone Field for Numverify (managed via Field Manager)",
             "required": false,
-            "type": "text"
+            "type": "text",
+            "hidden": true
         },
         {
             "key": "debug-editable-ip",

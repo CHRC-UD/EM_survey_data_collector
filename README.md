@@ -8,7 +8,7 @@ Automatically captures IP addresses (plain or encrypted), user agent strings, br
 - **IP Address Collection**: Capture plain text or encrypted IP addresses  
 - **Browser Detection**: Automatically detect browser name, version, and platform
 - **Bot Detection**: Identify automated bot/crawler submissions
-- **Geolocation**: Get city, region, country, timezone, and ISP from IP addresses (via ipapi.co)
+- **Geolocation**: Get city, region, country, timezone, and ISP from IP addresses (via ip-api.com)
 - **Email Validation**: Validate email addresses via ZeroBounce API with status, gender, location, and more
 - **Phone Validation**: Validate phone numbers via Numverify API with carrier, location, and validity
 - **Privacy-Focused**: Encrypted IP storage with key versioning
@@ -32,7 +32,7 @@ Automatically captures IP addresses (plain or encrypted), user agent strings, br
 
 #### IP Geolocation Settings
 - **Enable IP Geolocation Lookup**: Check to enable geographic data (city, region, country, etc.) per project
-  - ⚠️ Sends IPs to ipapi.co third-party service - ensure privacy/IRB compliance
+  - ⚠️ Sends IPs to ip-api.com third-party service - ensure privacy/IRB compliance
   - Free tier: 1,000 requests/day
   - Default timeout: 3 seconds
 - **Geolocation API Timeout**: Maximum wait time for geolocation responses
@@ -335,7 +335,7 @@ MIT License - See LICENSE file for details
 
 - **Browser Detection**: Wolfcast Library (BrowserDetection class)
 - **Action Tag Parsing**: REDCap External Module Framework
-- **Geolocation**: ipapi.co API
+- **Geolocation**: ip-api.com API
 - **Email Validation**: ZeroBounce API
 - **Phone Validation**: Numverify API
 

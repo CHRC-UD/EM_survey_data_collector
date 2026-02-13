@@ -210,12 +210,10 @@ $ajaxUrl = $module->getUrl('decrypt-ajax.php');
             ];
             
             rows.forEach(function(row) {
-                tbody.append(
-                    '<tr>' +
-                    '<td><strong>' + row.label + '</strong></td>' +
-                    '<td>' + row.value + '</td>' +
-                    '</tr>'
-                );
+                var $tr = $('<tr>');
+                $tr.append($('<td>').html('<strong>' + row.label + '</strong>'));
+                $tr.append($('<td>').text(row.value));
+                tbody.append($tr);
             });
             
             $('#sdc-results').show();

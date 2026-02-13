@@ -51,28 +51,9 @@ try {
     $row = db_fetch_assoc($result);
     $fieldOrder = ($row['max_order'] ?? 0) + 1;
     
-    // Prepare field metadata
-    $fieldData = [
-        'field_name' => $fieldName,
-        'form_name' => $instrument,
-        'section_header' => '',
-        'field_type' => 'text',
-        'field_label' => $fieldLabel,
-        'select_choices_or_calculations' => '',
-        'field_note' => 'Automatically populated by Survey Data Collector module',
-        'text_validation_type_or_show_slider_number' => '',
-        'text_validation_min' => '',
-        'text_validation_max' => '',
-        'identifier' => '',
-        'branching_logic' => '',
-        'required_field' => '',
-        'custom_alignment' => '',
-        'question_number' => '',
-        'matrix_group_name' => '',
-        'matrix_ranking' => '',
-        'field_annotation' => $actionTag . ' @HIDDEN-SURVEY @READONLY',
-        'field_order' => $fieldOrder
-    ];
+    // Prepare field metadata (action tags only; @HIDDEN-SURVEY and @READONLY
+    // are injected dynamically by redcap_every_page_before_render)
+    $fieldAnnotation = $actionTag;
     
     // Use REDCap's metadata update method
     $sql = "INSERT INTO redcap_metadata (
@@ -86,7 +67,7 @@ try {
         'text',
         '" . db_escape($fieldLabel) . "',
         'Automatically populated by Survey Data Collector module',
-        '" . db_escape($actionTag . ' @HIDDEN-SURVEY @READONLY') . "'
+        '" . db_escape($fieldAnnotation) . "'
     )";
     
     $result = db_query($sql);

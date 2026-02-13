@@ -4,7 +4,6 @@
  */
 
 $(document).ready(function() {
-    console.log('Field Manager loaded');
     
     // Enable buttons when instrument is selected
     $('#instrument-select').on('change', function() {
@@ -102,7 +101,8 @@ $(document).ready(function() {
         var fields = SurveyFieldManager.formFields[formName];
         $sel.append('<option value="">-- Choose email field --</option>');
         fields.forEach(function(f) {
-            $sel.append('<option value="' + f.name + '">' + f.name + ' — ' + $('<div>').text(f.label).html() + '</option>');
+            var selected = (f.name === SurveyFieldManager.currentEmailField) ? ' selected' : '';
+            $sel.append('<option value="' + f.name + '"' + selected + '>' + f.name + ' — ' + $('<div>').text(f.label).html() + '</option>');
         });
         $sel.prop('disabled', false);
     }
@@ -118,7 +118,8 @@ $(document).ready(function() {
         var fields = SurveyFieldManager.formFields[formName];
         $sel.append('<option value="">-- Choose phone field --</option>');
         fields.forEach(function(f) {
-            $sel.append('<option value="' + f.name + '">' + f.name + ' — ' + $('<div>').text(f.label).html() + '</option>');
+            var selected = (f.name === SurveyFieldManager.currentPhoneField) ? ' selected' : '';
+            $sel.append('<option value="' + f.name + '"' + selected + '>' + f.name + ' — ' + $('<div>').text(f.label).html() + '</option>');
         });
         $sel.prop('disabled', false);
     }

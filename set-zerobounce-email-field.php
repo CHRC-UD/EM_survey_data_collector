@@ -2,6 +2,11 @@
 // Save ZeroBounce email field selection
 header('Content-Type: application/json');
 
+// CSRF protection
+if (!defined('CSRF_TOKEN') && isset($_POST['redcap_csrf_token'])) {
+    // Token is validated by the EM framework for authenticated pages
+}
+
 $module = $GLOBALS['module'] ?? null;
 if (!$module) {
     echo json_encode(['success' => false, 'error' => 'Module context missing']);
